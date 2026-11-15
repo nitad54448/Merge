@@ -3,7 +3,7 @@
 
   const MP = (global.MP = global.MP || {});
 
-  const MODE_IDS = ['drag_stack', 'shooter_2048', 'path_drag', 'dice_grid'];
+  const MODE_IDS = ['merge_mania', 'drag_stack', 'shooter_2048', 'path_drag', 'dice_grid'];
   const META_KEY = 'mp_redcat_meta_v1';
   const RUN_PREFIX = 'mp_redcat_run_v1_';
 
@@ -14,6 +14,7 @@
     } catch (_) {}
 
     return {
+      merge_mania: { best: legacyBest, maxTile: 2, played: 0 },
       drag_stack: { best: 0, maxTile: 2, played: 0 },
       shooter_2048: { best: legacyBest, maxTile: 2, played: 0 },
       path_drag: { best: 0, maxTile: 2, played: 0 },

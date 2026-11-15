@@ -3,9 +3,18 @@
 
   const MP = (global.MP = global.MP || {});
 
-  const MODE_ORDER = ['drag_stack', 'shooter_2048', 'path_drag', 'dice_grid'];
+  const MODE_ORDER = ['merge_mania', 'drag_stack', 'shooter_2048', 'path_drag', 'dice_grid'];
 
   const HELP_CONTENT = {
+    merge_mania: {
+      title: '⬇️ Merge Mania',
+      bullets: [
+        'Drag or tap across the 5 columns to aim from the top staging bar, then release to drop the block downward.',
+        'Matching adjacent blocks (up, down, left, or right) automatically fuse into higher powers of 2 as gravity pulls tiles down.',
+        'Connect 2 or 3 matching neighbors at once for 4× or 8× mega-merges and cascading chain combos!',
+        'Tip: Tap the ⇄ NEXT box in the top bar (or press S) anytime to swap your current and upcoming block.'
+      ]
+    },
     drag_stack: {
       title: '🧱 Drag & Merge',
       bullets: [
@@ -104,7 +113,7 @@
   let boosterMode = 'NONE'; // NONE | HAMMER | SWAP_1 | SWAP_2
   let swapFirst = null;
   let newBestInRun = false;
-  let activeHelpTab = 'drag_stack';
+  let activeHelpTab = 'merge_mania';
   let deferredInstallPrompt = null;
 
   function deepClone(obj) {

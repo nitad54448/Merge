@@ -1,4 +1,4 @@
-const CACHE_NAME = 'merge-puzzle-redcat-v2';
+const CACHE_NAME = 'merge-puzzle-redcat-v3';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const CORE_ASSETS = [
   './js/audio.js',
   './js/themes.js',
   './js/effects.js',
+  './js/modes/mergeMania.js',
   './js/modes/dragStack.js',
   './js/modes/shooter2048.js',
   './js/modes/pathDrag.js',

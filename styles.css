@@ -261,6 +261,10 @@ button {
   .mode-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .mode-grid > .mode-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
 }
 
 .mode-card {
@@ -752,6 +756,10 @@ body[data-bg="slate"] .mode-play-btn {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
+}
+
+.help-tabs > .help-tab:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 
 .help-tab {
