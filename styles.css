@@ -714,6 +714,10 @@ body[data-bg="slate"] .mode-play-btn {
   gap: 8px;
 }
 
+.skin-grid > .choice-card:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
 .choice-card {
   border: 1px solid var(--panel-border);
   background: rgba(0, 0, 0, 0.25);

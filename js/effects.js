@@ -67,7 +67,7 @@
       this.scaleAnims[`${r},${c}`] = 0.01;
     }
 
-    addTween(val, waypoints, speed = 7, onDone = null, sizeScale = 1) {
+    addTween(val, waypoints, speed = 7, onDone = null, sizeScale = 1, tileOpts = null) {
       if (!waypoints || waypoints.length < 2) {
         if (onDone) onDone();
         return;
@@ -82,7 +82,8 @@
         startTime: performance.now(),
         done: false,
         onDone,
-        sizeScale
+        sizeScale,
+        tileOpts
       };
       this.tweenAnims.push(anim);
       Timers.after(durationMs + 50, () => {
@@ -125,7 +126,7 @@
       };
     }
 
-    updateAndDraw(ctx, dt, cell, skinId) {
+    updateAndDraw(ctx, dt, cell, skinId, defaultTileOpts = null) {
       const nowMs = performance.now();
       // Tweened moving tiles
       for (let i = this.tweenAnims.length - 1; i >= 0; i--) {
@@ -135,7 +136,7 @@
           ? anim.progress * anim.progress
           : 1 - Math.pow(1 - anim.progress, 2);
         const pt = this._sampleWaypoints(anim.waypoints, eased);
-        MP.Themes.drawTile(ctx, pt.x, pt.y, cell * anim.sizeScale, anim.val, skinId, {});
+        MP.Themes.drawTile(ctx, pt.x, pt.y, cell * anim.sizeScale, anim.val, skinId, anim.tileOpts || defaultTileOpts || {});
         if (anim.progress >= 1) {
           anim.done = true;
           this.tweenAnims.splice(i, 1);

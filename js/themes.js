@@ -27,6 +27,12 @@
       name: 'Brick',
       desc: 'Bold arcade 3D blocks',
       swatch: 'linear-gradient(135deg, #fb7185, #be123c)'
+    },
+    {
+      id: 'mania',
+      name: 'Mania',
+      desc: 'Vibrant candy 3D blocks',
+      swatch: 'linear-gradient(135deg, #f45197, #fb923c, #22d3ee)'
     }
   ];
 
@@ -105,9 +111,24 @@
     2048: { top: '#f59e0b', bot: '#78350f', rim: '#fef08a', text: '#ffffff' }
   };
 
+  const MANIA_OVERRIDES = {
+    2:    { top: '#f45197', bot: '#be185d', rim: '#fbcfe8', text: '#ffffff' },
+    4:    { top: '#fb923c', bot: '#c2410c', rim: '#fed7aa', text: '#ffffff' },
+    8:    { top: '#facc15', bot: '#b45309', rim: '#fef08a', text: '#ffffff' },
+    16:   { top: '#4ade80', bot: '#15803d', rim: '#bbf7d0', text: '#ffffff' },
+    32:   { top: '#22d3ee', bot: '#0e7490', rim: '#a5f3fc', text: '#ffffff' },
+    64:   { top: '#60a5fa', bot: '#1d4ed8', rim: '#bfdbfe', text: '#ffffff' },
+    128:  { top: '#a855f7', bot: '#6b21a8', rim: '#e9d5ff', text: '#ffffff' },
+    256:  { top: '#fb7185', bot: '#9f1239', rim: '#fecdd3', text: '#ffffff' },
+    512:  { top: '#2dd4bf', bot: '#115e59', rim: '#99f6e4', text: '#ffffff' },
+    1024: { top: '#fbbf24', bot: '#92400e', rim: '#fef08a', text: '#fffbeb' },
+    2048: { top: '#ec4899', bot: '#831843', rim: '#fde047', text: '#ffffff' }
+  };
+
   function getTierColors(val, skinId) {
     if (skinId === 'wood' && WOOD_OVERRIDES[val]) return WOOD_OVERRIDES[val];
     if (skinId === 'iron' && IRON_OVERRIDES[val]) return IRON_OVERRIDES[val];
+    if (skinId === 'mania' && MANIA_OVERRIDES[val]) return MANIA_OVERRIDES[val];
     if (BASE_TIERS[val]) return BASE_TIERS[val];
     // Beyond 8192: cycle vibrant prism colors
     const exp = Math.max(0, Math.round(Math.log2(Math.max(2, val))));
@@ -293,6 +314,24 @@
     ctx.restore();
   }
 
+  function drawManiaTexture(ctx, x, y, s, radius) {
+    ctx.save();
+    roundedRectPath(ctx, x + 2, y + 2, s - 4, s - 4, Math.max(5, radius - 2));
+    ctx.clip();
+
+    // Glossy top specular strip
+    roundedRectPath(ctx, x + 3, y + 2.5, s - 6, s * 0.34, Math.max(4, radius * 0.72));
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.24)';
+    ctx.fill();
+
+    // Subtle inner bright bevel
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+    ctx.lineWidth = Math.max(1.1, s * 0.03);
+    roundedRectPath(ctx, x + s * 0.06, y + s * 0.06, s * 0.88, s * 0.88, Math.max(4, radius * 0.74));
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawCrownAccent(ctx, cx, yTop, s) {
     const w = Math.max(8, s * 0.24);
     const h = Math.max(5, s * 0.13);
@@ -316,7 +355,9 @@
   }
 
   function drawTile(ctx, cx, cy, size, val, skinId, opts = {}) {
-    const colors = getTierColors(val, skinId || 'wood');
+    const activeSkin = skinId || 'wood';
+    const colorSkin = opts.palette || activeSkin;
+    const colors = getTierColors(val, colorSkin);
     const scale = opts.scale !== undefined ? opts.scale : 1;
     const alpha = opts.alpha !== undefined ? opts.alpha : 1;
     const s = size * scale;
@@ -325,7 +366,12 @@
     const x = cx - s / 2;
     const y = cy - s / 2;
     const radius = Math.max(6, s * 0.18);
-    const lipDepth = skinId === 'brick' ? Math.max(3, s * 0.08) : Math.max(2.5, s * 0.06);
+    const isManiaVisual = activeSkin === 'mania' || opts.palette === 'mania';
+    const lipDepth = isManiaVisual
+      ? Math.max(3, s * 0.085)
+      : activeSkin === 'brick'
+        ? Math.max(3, s * 0.08)
+        : Math.max(2.5, s * 0.06);
 
     ctx.save();
     if (alpha < 1) ctx.globalAlpha = alpha;
@@ -335,21 +381,31 @@
     ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
     ctx.fill();
 
-    // Main tile body gradient
+    // Main tile body gradient (with optional outer white glow)
+    if (opts.glow) {
+      ctx.shadowColor = 'rgba(255, 255, 255, 0.75)';
+      ctx.shadowBlur = Math.max(8, s * 0.22);
+    }
     const grad = ctx.createLinearGradient(x, y, x, y + s);
     grad.addColorStop(0, colors.top);
     grad.addColorStop(1, colors.bot);
     roundedRectPath(ctx, x, y, s, s, radius);
     ctx.fillStyle = grad;
     ctx.fill();
+    if (opts.glow) {
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
+    }
 
     // Material texture overlay
-    if (skinId === 'wood') {
+    if (activeSkin === 'wood') {
       drawWoodTexture(ctx, x, y, s, radius);
-    } else if (skinId === 'iron') {
+    } else if (activeSkin === 'iron') {
       drawIronTexture(ctx, x, y, s, radius);
-    } else if (skinId === 'jewel') {
+    } else if (activeSkin === 'jewel') {
       drawJewelTexture(ctx, x, y, s, radius);
+    } else if (activeSkin === 'mania') {
+      drawManiaTexture(ctx, x, y, s, radius);
     } else {
       drawBrickTexture(ctx, x, y, s, radius);
     }

@@ -3,9 +3,18 @@
 
   const MP = (global.MP = global.MP || {});
 
-  const MODE_ORDER = ['merge_mania', 'drag_stack', 'shooter_2048', 'path_drag', 'dice_grid'];
+  const MODE_ORDER = ['mania_classic', 'merge_mania', 'drag_stack', 'shooter_2048', 'path_drag', 'dice_grid'];
 
   const HELP_CONTENT = {
+    mania_classic: {
+      title: '🌺 Mania Classic',
+      bullets: [
+        'Drag any block with at least one open side (top, left, or right) onto a matching exposed block—or onto the top of another column.',
+        'Dropping onto a matching number fuses them immediately and triggers automatic vertical cascade combos down the stack (2+2→4→8→16...).',
+        'Pulling a side-exposed block out of the middle or bottom compacts that column under gravity and can spark bonus cascades!',
+        'Watch the 5-pip NEXT ROW meter: merges spend 1 pip, non-merge moves spend 2 pips, or tap ▲ +ROW (press R) to raise a new row early.'
+      ]
+    },
     merge_mania: {
       title: '⬇️ Merge Mania',
       bullets: [
@@ -113,7 +122,7 @@
   let boosterMode = 'NONE'; // NONE | HAMMER | SWAP_1 | SWAP_2
   let swapFirst = null;
   let newBestInRun = false;
-  let activeHelpTab = 'merge_mania';
+  let activeHelpTab = 'mania_classic';
   let deferredInstallPrompt = null;
 
   function deepClone(obj) {

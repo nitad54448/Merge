@@ -1,7 +1,7 @@
 {
   "name": "Merge Puzzle - Number Games",
   "short_name": "Merge Puzzle",
-  "description": "4-in-1 number block merge puzzle inspired by RedCat: Drag & Merge, 2048 Shooter, Slide Path & Domino Merge.",
+  "description": "6-in-1 number block merge puzzle: Mania Classic, Merge Mania, Drag & Merge, 2048 Shooter, Slide & Merge & Domino Merge.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
