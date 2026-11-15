@@ -189,7 +189,7 @@
     }
   }
 
-  function resolveColumns(ctxApp, combo, afterPlayerMove, didMergeInitial) {
+  function resolveColumns(ctxApp, combo, afterPlayerMove, didMergeInitial, fromPush = false) {
     const state = ctxApp.state;
     const grid = state.grid;
     const metrics = ctxApp.metrics;
@@ -219,7 +219,7 @@
 
     if (mergedAny) {
       MP.Timers.after(125, () => {
-        resolveColumns(ctxApp, combo + 1, afterPlayerMove, didMergeInitial);
+        resolveColumns(ctxApp, combo + 1, afterPlayerMove, didMergeInitial, fromPush);
       });
       return;
     }
@@ -239,6 +239,10 @@
           return;
         }
       }
+    } else if (!fromPush && countTiles(grid) <= 1) {
+      state.graceMoves = 2;
+      MP.Timers.after(110, () => pushPreviewRow(ctxApp));
+      return;
     }
 
     ctxApp.setBusy(false);
@@ -287,7 +291,7 @@
     }
 
     MP.Timers.after(120, () => {
-      resolveColumns(ctxApp, 1, false, false);
+      resolveColumns(ctxApp, 1, false, false, true);
     });
   }
 

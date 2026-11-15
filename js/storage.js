@@ -3,6 +3,17 @@
 
   const MP = (global.MP = global.MP || {});
 
+  if (MP.deferredInstallPrompt === undefined) {
+    MP.deferredInstallPrompt = null;
+  }
+  global.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    MP.deferredInstallPrompt = e;
+    if (typeof MP.onInstallPromptReady === 'function') {
+      MP.onInstallPromptReady(e);
+    }
+  });
+
   const MODE_IDS = ['mania_classic', 'merge_mania', 'drag_stack', 'shooter_2048', 'path_drag', 'dice_grid'];
   const META_KEY = 'mp_redcat_meta_v1';
   const RUN_PREFIX = 'mp_redcat_run_v1_';

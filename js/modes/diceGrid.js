@@ -134,6 +134,7 @@
   }
 
   function isGameOver(state) {
+    if (state.gameOver) return true;
     const grid = state.grid;
     const cells = getPieceCells(state.activePiece);
     if (cells.length <= 1) {

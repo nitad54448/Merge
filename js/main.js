@@ -114,6 +114,10 @@
   const playAgainBtn = document.getElementById('btn-play-again');
   const changeGameBtn = document.getElementById('btn-change-game');
 
+  const installModal = document.getElementById('install-modal');
+  const installStepsEl = document.getElementById('install-steps');
+  const triggerInstallBtn = document.getElementById('btn-trigger-install');
+
   // Runtime App State
   let activeMode = null;
   let runState = null;
@@ -123,7 +127,8 @@
   let swapFirst = null;
   let newBestInRun = false;
   let activeHelpTab = 'mania_classic';
-  let deferredInstallPrompt = null;
+  let appInstalledInSession = false;
+  let suppressPopState = false;
 
   function deepClone(obj) {
     return JSON.parse(JSON.stringify(obj));
@@ -249,7 +254,18 @@
     }
   }
 
-  function showHub() {
+  function closeAnyOpenModal() {
+    let closed = false;
+    [themesModal, helpModal, confirmModal, installModal].forEach((m) => {
+      if (m && m.classList.contains('open')) {
+        m.classList.remove('open');
+        closed = true;
+      }
+    });
+    return closed;
+  }
+
+  function showHub(fromPopState = false) {
     persistCurrentRun();
     MP.Timers.clearAll();
     MP.Effects.reset();
@@ -267,6 +283,19 @@
     hubScreen.classList.remove('hidden');
 
     renderHub();
+    syncInstallUI();
+
+    if (!fromPopState && global.history && global.history.state && global.history.state.mpView === 'game') {
+      suppressPopState = true;
+      try {
+        global.history.back();
+      } catch (_) {
+        suppressPopState = false;
+      }
+      setTimeout(() => {
+        suppressPopState = false;
+      }, 150);
+    }
   }
 
   function createFreshRunState(mode) {
@@ -317,10 +346,19 @@
 
     MP.Storage.setPreference('lastMode', modeId);
 
+    const wasOnHub = !hubScreen.classList.contains('hidden');
     hubScreen.classList.add('hidden');
     gameScreen.classList.remove('hidden');
     gameoverModal.classList.remove('open');
     confirmModal.classList.remove('open');
+
+    if (wasOnHub && global.history && typeof global.history.pushState === 'function') {
+      if (!(global.history.state && global.history.state.mpView === 'game')) {
+        try {
+          global.history.pushState({ mpView: 'game', modeId }, '');
+        } catch (_) {}
+      }
+    }
 
     activeModeBadge.textContent = `${mode.icon} ${mode.name}`;
     resizeCanvas();
@@ -656,16 +694,45 @@
   });
 
   global.addEventListener('keydown', (e) => {
-    if (!activeMode || !runState || gameScreen.classList.contains('hidden')) return;
-    if (themesModal.classList.contains('open') || helpModal.classList.contains('open') || confirmModal.classList.contains('open') || gameoverModal.classList.contains('open')) {
+    const anyModalOpen =
+      themesModal.classList.contains('open') ||
+      helpModal.classList.contains('open') ||
+      confirmModal.classList.contains('open') ||
+      (installModal && installModal.classList.contains('open')) ||
+      gameoverModal.classList.contains('open');
+
+    if (anyModalOpen) {
       if (e.key === 'Escape') {
-        themesModal.classList.remove('open');
-        helpModal.classList.remove('open');
-        confirmModal.classList.remove('open');
+        closeAnyOpenModal();
       }
       return;
     }
+
+    if (!activeMode || !runState || gameScreen.classList.contains('hidden')) return;
     activeMode.onKeyDown(e, ctxApp);
+  });
+
+  global.addEventListener('popstate', () => {
+    if (suppressPopState) {
+      suppressPopState = false;
+      return;
+    }
+    if (closeAnyOpenModal()) {
+      if (
+        !gameScreen.classList.contains('hidden') &&
+        global.history &&
+        typeof global.history.pushState === 'function' &&
+        !(global.history.state && global.history.state.mpView === 'game')
+      ) {
+        try {
+          global.history.pushState({ mpView: 'game', modeId: activeMode ? activeMode.id : null }, '');
+        } catch (_) {}
+      }
+      return;
+    }
+    if (!gameScreen.classList.contains('hidden')) {
+      showHub(true);
+    }
   });
 
   // ==========================================
@@ -769,7 +836,7 @@
     });
   });
 
-  [themesModal, helpModal, confirmModal].forEach((backdrop) => {
+  [themesModal, helpModal, confirmModal, installModal].filter(Boolean).forEach((backdrop) => {
     backdrop.addEventListener('click', (e) => {
       if (e.target === backdrop) backdrop.classList.remove('open');
     });
@@ -862,25 +929,160 @@
   // ==========================================
   // PWA INSTALL PROMPT & SERVICE WORKER
   // ==========================================
-  global.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredInstallPrompt = e;
-    hubInstallBtn.classList.remove('hidden');
-  });
+  const STANDALONE_QUERIES = [
+    '(display-mode: standalone)',
+    '(display-mode: fullscreen)',
+    '(display-mode: minimal-ui)',
+    '(display-mode: window-controls-overlay)'
+  ];
 
-  hubInstallBtn.addEventListener('click', async () => {
-    if (!deferredInstallPrompt) return;
-    deferredInstallPrompt.prompt();
+  function isRunningStandalone() {
+    if (global.navigator && global.navigator.standalone === true) return true;
+    if (typeof document.referrer === 'string' && document.referrer.startsWith('android-app://')) {
+      return true;
+    }
     try {
-      await deferredInstallPrompt.userChoice;
+      if (new URLSearchParams(global.location.search || '').get('source') === 'pwa') {
+        return true;
+      }
     } catch (_) {}
-    deferredInstallPrompt = null;
-    hubInstallBtn.classList.add('hidden');
-  });
+    if (typeof global.matchMedia === 'function') {
+      for (const query of STANDALONE_QUERIES) {
+        try {
+          if (global.matchMedia(query).matches) return true;
+        } catch (_) {}
+      }
+    }
+    return false;
+  }
+
+  function syncInstallUI() {
+    const hideInstall = isRunningStandalone() || appInstalledInSession;
+    if (hubInstallBtn) {
+      hubInstallBtn.classList.toggle('hidden', hideInstall);
+    }
+    if (triggerInstallBtn) {
+      triggerInstallBtn.classList.toggle('hidden', hideInstall || !MP.deferredInstallPrompt);
+    }
+    if (hideInstall && installModal) {
+      installModal.classList.remove('open');
+    }
+  }
+
+  if (typeof global.matchMedia === 'function') {
+    for (const query of STANDALONE_QUERIES) {
+      try {
+        const mq = global.matchMedia(query);
+        if (typeof mq.addEventListener === 'function') {
+          mq.addEventListener('change', syncInstallUI);
+        } else if (typeof mq.addListener === 'function') {
+          mq.addListener(syncInstallUI);
+        }
+      } catch (_) {}
+    }
+  }
+
+  MP.onInstallPromptReady = () => {
+    syncInstallUI();
+  };
+
+  async function triggerNativeInstall() {
+    const promptEvent = MP.deferredInstallPrompt;
+    if (!promptEvent) return false;
+    MP.deferredInstallPrompt = null;
+    promptEvent.prompt();
+    try {
+      const choice = await promptEvent.userChoice;
+      if (choice && choice.outcome === 'accepted') {
+        appInstalledInSession = true;
+        if (installModal) installModal.classList.remove('open');
+      }
+    } catch (_) {}
+    syncInstallUI();
+    return true;
+  }
+
+  function renderInstallModal() {
+    if (!installStepsEl) return;
+    const ua = navigator.userAgent || '';
+    const isAndroid = /Android/i.test(ua);
+    const isSamsungBrowser = /SamsungBrowser/i.test(ua);
+    const isAndroidWebView = isAndroid && (/;\s*wv\)/i.test(ua) || /\b(FBAN|FBAV|Instagram|Line|MicroMessenger)\b/i.test(ua));
+    const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    let title = 'Desktop / Browser Install';
+    let steps = [
+      'Click the <strong>Install</strong> icon in your browser\'s address bar (Chrome or Edge), or open this page in Chrome on your Android phone and tap <strong>📲 Install</strong>.'
+    ];
+    let tip = 'When launched from your Android Home Screen as an installed app, the Install button hides automatically.';
+
+    if (isAndroidWebView) {
+      title = 'Android In-App Browser';
+      steps = [
+        'Tap <strong>⋮</strong> (top-right) and select <strong>"Open in Chrome"</strong>.',
+        'Tap <strong>"📲 Install"</strong> in the header (or Chrome menu <strong>⋮ → "Install app"</strong>).'
+      ];
+      tip = 'In-app viewers block app installation until opened in full <strong>Google Chrome</strong>.';
+    } else if (isSamsungBrowser) {
+      title = 'Samsung Internet on Android';
+      steps = [
+        'Tap <strong>≡</strong> (bottom-right) → <strong>"Add page to"</strong> → <strong>"Home screen"</strong>.'
+      ];
+      tip = '<strong>Recommended:</strong> Open this page in <strong>Google Chrome</strong> on Android to install—Chrome mints a Google Play–verified WebAPK targeting modern Android and avoids Play Protect\'s <em>"built for an older version of Android"</em> warning.';
+    } else if (isAndroid) {
+      title = 'Install on Android';
+      steps = [
+        'Tap your browser menu (<strong>⋮</strong> in the top-right corner).',
+        'Select <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.',
+        'Launch <strong>Merge Puzzle</strong> from your Android Home Screen for full-screen play (the Install button hides automatically inside the installed app).'
+      ];
+      tip = 'For best results, use up-to-date <strong>Google Chrome</strong> so Google Play–verified WebAPK installation runs cleanly with zero Play Protect warnings.';
+    } else if (isIOS) {
+      title = 'Install on iPhone / iPad';
+      steps = [
+        'Tap the <strong>Share</strong> icon in Safari\'s toolbar.',
+        'Choose <strong>"Add to Home Screen"</strong>, then tap <strong>"Add"</strong>.'
+      ];
+    }
+
+    installStepsEl.innerHTML = `
+      <h3>${title}</h3>
+      <ol>
+        ${steps.map((s) => `<li>${s}</li>`).join('')}
+      </ol>
+      <p class="install-tip">${tip}</p>
+    `;
+    syncInstallUI();
+  }
+
+  if (hubInstallBtn) {
+    hubInstallBtn.addEventListener('click', async () => {
+      MP.Sound.unlock();
+      MP.Sound.playTick();
+      if (isRunningStandalone() || appInstalledInSession) {
+        syncInstallUI();
+        return;
+      }
+      if (MP.deferredInstallPrompt) {
+        await triggerNativeInstall();
+      } else {
+        renderInstallModal();
+        if (installModal) installModal.classList.add('open');
+      }
+    });
+  }
+
+  if (triggerInstallBtn) {
+    triggerInstallBtn.addEventListener('click', async () => {
+      MP.Sound.unlock();
+      await triggerNativeInstall();
+    });
+  }
 
   global.addEventListener('appinstalled', () => {
-    deferredInstallPrompt = null;
-    hubInstallBtn.classList.add('hidden');
+    MP.deferredInstallPrompt = null;
+    appInstalledInSession = true;
+    syncInstallUI();
   });
 
   if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
@@ -892,5 +1094,6 @@
   // Boot onto the Game Selector Hub
   applyThemeVisuals();
   renderHub();
+  syncInstallUI();
   requestAnimationFrame(frame);
 })(window);

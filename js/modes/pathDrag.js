@@ -161,6 +161,7 @@
   }
 
   function isGameOver(state) {
+    if (state.gameOver) return true;
     const grid = state.grid;
     if (getEmptyCells(grid).length > 0) return false;
     const dirs = [[1, 0], [0, 1]];

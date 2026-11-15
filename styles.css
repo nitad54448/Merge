@@ -215,14 +215,21 @@ button {
   .hub-utils {
     width: 100%;
     justify-content: flex-start;
+    gap: 6px;
+    flex-wrap: nowrap;
   }
 
   .hub-utils .pill-btn {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 7px;
+    font-size: 12px;
+    gap: 4px;
   }
 
   #hub-btn-sound {
-    flex: 0 0 42px;
+    flex: 0 0 38px;
+    padding: 0;
   }
 }
 
@@ -797,13 +804,25 @@ body[data-bg="slate"] .mode-play-btn {
   color: var(--accent);
 }
 
-.help-body ul {
+.help-body ul,
+.help-body ol {
   margin: 0;
   padding-left: 18px;
 }
 
 .help-body li + li {
   margin-top: 5px;
+}
+
+.install-tip {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  border: 1px solid var(--panel-border);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text);
 }
 
 /* Game Over & Confirm Modal */

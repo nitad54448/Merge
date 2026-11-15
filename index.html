@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; media-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none';" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#1c100a" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -10,7 +12,8 @@
   <title>Merge Puzzle - Number Games</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/svg+xml" href="./icon.svg" />
-  <link rel="apple-touch-icon" href="./icon.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
   <link rel="stylesheet" href="./styles.css" />
   <script defer src="./js/storage.js"></script>
   <script defer src="./js/audio.js"></script>
@@ -192,6 +195,24 @@
       <div class="modal-btn-stack">
         <button class="primary-btn" id="btn-play-again" type="button">Play Again</button>
         <button class="secondary-btn" id="btn-change-game" type="button">Change Game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================
+       INSTALL APP MODAL
+       ============================ -->
+  <div class="modal-backdrop" id="install-modal" role="dialog" aria-modal="true" aria-labelledby="install-title">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="install-title">📲 Install Merge Puzzle</h2>
+        <button class="modal-close" type="button" data-close-modal="install-modal" aria-label="Close">✕</button>
+      </div>
+      <p class="modal-sub">Add Merge Puzzle to your Android Home Screen for full-screen offline play—no browser bar required.</p>
+      <div class="help-body" id="install-steps"></div>
+      <div class="modal-btn-stack">
+        <button class="primary-btn hidden" id="btn-trigger-install" type="button">📲 Install Now</button>
+        <button class="secondary-btn" type="button" data-close-modal="install-modal">Got It</button>
       </div>
     </div>
   </div>

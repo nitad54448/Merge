@@ -102,6 +102,7 @@
   }
 
   function isGameOver(state) {
+    if (state.gameOver) return true;
     return !canShootAny(state.grid, state.currentVal) && !canShootAny(state.grid, state.nextVal);
   }
 
