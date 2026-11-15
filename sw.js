@@ -1,9 +1,19 @@
-const CACHE_NAME = 'merge-mania-v1';
+const CACHE_NAME = 'merge-puzzle-redcat-v2';
 const CORE_ASSETS = [
   './',
   './index.html',
+  './styles.css',
   './manifest.json',
-  './icon.svg'
+  './icon.svg',
+  './js/storage.js',
+  './js/audio.js',
+  './js/themes.js',
+  './js/effects.js',
+  './js/modes/dragStack.js',
+  './js/modes/shooter2048.js',
+  './js/modes/pathDrag.js',
+  './js/modes/diceGrid.js',
+  './js/main.js'
 ];
 
 self.addEventListener('install', (event) => {
@@ -30,18 +40,16 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
-        .then((response) => {
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          return response;
-        })
-        .catch(() => caches.match('./index.html'));
-    })
+        }
+        return response;
+      })
+      .catch(() =>
+        caches.match(event.request).then((cached) => cached || caches.match('./index.html'))
+      )
   );
 });
